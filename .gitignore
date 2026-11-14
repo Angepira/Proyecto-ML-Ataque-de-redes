@@ -3,8 +3,7 @@
 venv/
 env/
 
-# Datos (parquet de ~2.9 GB en total, no van al repo)
-data/
+data/*
 *.parquet
 # Excepcion: unico parquet que si va al repo (el que usa el notebook)
 !data/merged_part_1.parquet
