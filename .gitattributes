@@ -1,2 +1,5 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# Parquet es binario: nunca normalizar saltos de linea
+*.parquet binary

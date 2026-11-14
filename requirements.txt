@@ -1,0 +1,56 @@
+# ---------------------------------------------------------------
+# Entorno SEPARADO para PyCaret 4.0 (PRE-RELEASE)  ->  .venv-pycaret4
+#
+#   uv venv .venv-pycaret4 --python 3.13
+#   uv pip install -r requirements-pycaret4.txt --python .venv-pycaret4 \
+#       --prerelease=if-necessary-or-explicit
+#   .venv-pycaret4\Scripts\python -m ipykernel install --user \
+#       --name bigflow-pycaret4 --display-name "Python (bigflow-pycaret4)"
+#
+# OJO: 4.0 todavia NO tiene release estable. La ultima publicada en PyPI
+# es la alpha 4.0.0a8 (2026-05-08). La API puede cambiar entre alphas.
+# El entorno estable del proyecto sigue siendo requirements-pycaret.txt
+# (PyCaret 3.3.2 + Python 3.11).
+#
+# A diferencia de 3.3.2, la 4.0 suelta los pines viejos
+# (numpy>=1.26, pandas>=2.2, scikit-learn>=1.5, python>=3.11),
+# por eso este entorno si corre en Python 3.13 como el resto del repo.
+# ---------------------------------------------------------------
+
+# notebook -> ipywidgets + nbformat (barras de progreso y tablas)
+# interpret -> shap (interpret_model)
+pycaret[notebook,interpret]==4.0.0a8
+
+# pycaret 4.0a8 solo declara pandas>=2.2. pandas 3.x cambia defaults
+# (copy-on-write, dtype string) y no esta probado contra esta alpha.
+pandas<3
+
+# lectura de los parquet del dataset
+pyarrow
+
+# modelos de boosting: 4.0 ya NO los trae como dependencia propia
+# (en 3.3.2 venian incluidos). Aqui si resuelven contra numpy 2.x,
+# asi que no aplica el bug de "access violation" del entorno 3.3.2.
+lightgbm
+xgboost
+catboost
+
+# graficado propio del notebook
+seaborn
+
+ipykernel
+
+# ---------------------------------------------------------------
+# VERIFICADO en este entorno (pycaret 4.0.0a8 / py3.13 / numpy 2.5.4):
+#   fit, compare_models, predict_model, finalize_model,
+#   save_model, load_model  -> OK
+#
+# BUG conocido en Windows: tune_model('lightgbm') y tune_model('xgboost')
+# fallan con "ValueError: high is out of bounds for int32" (la grilla por
+# defecto es demasiado grande para ParameterSampler de sklearn en win32).
+# Solucion: pasar custom_grid acotado, p.ej.
+#   exp.tune_model('lightgbm', n_iter=4, optimize='AUC', custom_grid={
+#       'n_estimators':[100,300], 'learning_rate':[0.05,0.1],
+#       'num_leaves':[31,63], 'max_depth':[-1,10]})
+# lr, dt, rf, knn, nb si se tunean sin custom_grid.
+# ---------------------------------------------------------------

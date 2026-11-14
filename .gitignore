@@ -1,0 +1,29 @@
+# Entorno virtual
+.venv*/
+venv/
+env/
+
+# Datos (parquet de ~2.9 GB en total, no van al repo)
+data/
+*.parquet
+# Excepcion: unico parquet que si va al repo (el que usa el notebook)
+!data/merged_part_1.parquet
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.ipynb_checkpoints/
+
+# Jupyter
+.jupyter/
+
+# Editores / SO
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini
+
+# Logs de PyCaret
+logs.log
+catboost_info/
