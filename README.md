@@ -105,6 +105,44 @@ no funciona para los que viajan dentro de trafico de forma normal. Un `xss` va
 dentro de una peticion web que a nivel de flujo se ve igual que cualquier otra.
 Para esos haria falta mirar el contenido, no el resumen del flujo.
 
+### El escalado faltante costaba 5 puntos de accuracy
+
+La parte multiclase le pasaba los datos sin escalar a la regresion logistica. En
+la misma tabla hay bytes, milisegundos y numeros de puerto, que son escalas
+completamente distintas, asi que `lbfgs` se quedaba en el limite de iteraciones
+sin converger (salia un `ConvergenceWarning`). Agregando `StandardScaler`:
+
+| Modelo multiclase | Sin escalar | Escalado |
+|---|---|---|
+| Regresion logistica | 0.7842 | **0.8252** |
+| MLP | 0.7761 | **0.8410** |
+
+### Priorizar la cola de alertas no sirve, y eso fue una sorpresa
+
+El analista no alcanza a revisar las mil alertas del dia, alcanza las primeras
+cincuenta. ¿En que orden conviene mostrarselas? Se midieron tres formas sobre un
+lote de 20.000 flujos:
+
+| Primeras N | En orden de llegada | Por anomalia | Por confianza |
+|---|---|---|---|
+| 10 | **1,000** | 1,000 | 0,600 |
+| 25 | **1,000** | 0,760 | 0,760 |
+| 50 | **0,960** | 0,800 | 0,880 |
+| 100 | **0,960** | 0,900 | 0,940 |
+| 250 | 0,972 | 0,960 | **0,976** |
+| 500 | 0,972 | 0,980 | **0,988** |
+
+Ordenar por puntuacion de anomalia, que era lo intuitivo, **empeora** la punta de
+la cola: en las primeras 25 pasa de 100% a 76%. Los flujos mas extremos no son
+los ataques mas claros, son los benignos mas raros.
+
+La razon es que la etapa 1 ya filtro: de 20.000 flujos quedaron 2.883 alertas con
+96,3% de precision. Sobre una cola que ya viene con 96% de aciertos no queda nada
+que ordenar.
+
+**El valor del sistema no esta en priorizar la cola, esta en el filtro que la
+produce.**
+
 ### El sistema sabe decir "no se"
 
 Para cada tipo de ataque se borra por completo del entrenamiento, se entrena con
@@ -123,6 +161,7 @@ como desconocidos en vez de recibir una etiqueta inventada.
 
 | Seccion | Que hay |
 |---|---|
+| El problema | que se quiere resolver, que tipo de problema es y por que la accuracy no sirve |
 | 1 a 5 | librerias, carga, preprocesamiento, nulos y balanceo |
 | Correlacion y pairplot | exploracion de variables |
 | Lasso | seleccion de variables con L1 sobre 50 submuestras |
@@ -135,6 +174,7 @@ como desconocidos en vez de recibir una etiqueta inventada.
 | **9** | que pasa con un ataque que nunca se vio |
 | **10** | cascada, las dos etapas juntas |
 | **11** | conclusiones y limitaciones |
+| **12** | aplicacion: la cola de alertas, donde se instalaria y que cuesta |
 
 Las secciones 6 a 11 usan solo variables de comportamiento. Las de arriba
 incluyen los puertos, asi que sus metricas son optimistas; la seccion 6 lo mide y
@@ -148,9 +188,16 @@ python -m venv .venv
 jupyter lab Proyecto.ipynb
 ```
 
-Corre de arriba a abajo sin tocar nada. Toma unos 49 minutos, y de esos **36 son
-la celda del Lasso multiclase**, que ajusta 50 regresiones con `saga`. Pide cerca
-de 1,5 GB de RAM.
+Corre de arriba a abajo sin tocar nada.
+
+La primera vez toma unos 49 minutos, y de esos **36 son la celda del Lasso
+multiclase**, que ajusta 50 regresiones con `saga`. Esa celda guarda su resultado
+en `data/lasso_multiclase.parquet`, asi que **de la segunda corrida en adelante
+son 12 minutos**. Para recalcularlo hay que borrar ese archivo.
+
+Pide cerca de 1,5 GB de RAM. El notebook libera las copias grandes a medida que
+avanza (hay celdas de `del` repartidas); sin eso se queda sin memoria antes de
+llegar al final.
 
 Las semillas estan fijas (`SEMILLA = 42`) en el muestreo, las particiones y los
 modelos.
@@ -169,7 +216,7 @@ El bloque de PyCaret del final necesita el otro entorno, el que esta descrito en
 | ¿Y si llega un ataque nuevo? | Seccion 9 |
 | ¿Por que dos etapas y no una? | Seccion 1 y seccion 11 |
 | ¿Por que el LOF si tiene el peor AUC? | Seccion 7 |
-| ¿Por que la etapa 2 da 0.99 y la multiclase de arriba 0.78? | Nota al inicio de la seccion 8: son 4 clases contra 3, con puertos contra sin ellos, y sin escalar contra escalado |
+| ¿Por que la etapa 2 da 0.99 y la multiclase de arriba 0.83? | Nota al inicio de la seccion 8: son 4 clases contra 3, y con puertos contra sin ellos |
 
 ## 7. Limitaciones
 
