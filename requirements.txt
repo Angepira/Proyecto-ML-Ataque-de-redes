@@ -1,4 +1,21 @@
 # ---------------------------------------------------------------
+# Entorno BASE: es el que necesita el notebook de punta a punta.
+# El bloque de PyCaret del final es lo unico que pide el otro entorno.
+#
+#   python -m venv .venv
+#   .venv\Scripts\pip install -r requirements.txt
+#
+# Probado con Python 3.12 en Windows 10.
+# ---------------------------------------------------------------
+pandas
+numpy
+scikit-learn
+matplotlib
+seaborn
+pyarrow
+ipykernel
+
+# ---------------------------------------------------------------
 # Entorno SEPARADO para PyCaret 4.0 (PRE-RELEASE)  ->  .venv-pycaret4
 #
 #   uv venv .venv-pycaret4 --python 3.13
